@@ -47,17 +47,33 @@ The current is naturally limited by the 500Ω resistor, which prevents excessive
 <img width="736" height="338" alt="image" src="https://github.com/user-attachments/assets/fa1297a3-8097-4f85-8bf5-e6174342188a" />
 
 
-Keyboard → Python (UDP) → WiFi → ESP32 → DAC → Op-Amp → LEDs
+Web UI → Python/Flask (UDP) → WiFi → ESP32 → DAC → Op-Amp → LEDs
 
 
-- **Input Layer**: Keyboard control (A/D keys - in my case)
+- **Input Layer**: Web-based controller UI (served locally)
 - **Communication Layer**: UDP over WiFi
 - **Embedded System**: ESP32
 - **Analog Processing**: Op-amp (LM358)
 - **Output Layer**: Bidirectional current
 
 
+## 🚦 Deployment & Setup
 
+### 1. Hardware & Firmware (ESP32)
+- Open `src/receiver.ino` and update the WiFi `ssid` and `password` variables
+- Flash to the ESP32 and open Serial Monitor at `115200` baud to retrieve the local IP address
+- Ensure your GVS electrodes are connected to the Op-Amp output and the 1.65V reference ground
+
+### 2. Python Command Bridge
+- Update the `ESP32_IP` variable inside `brain.py` to match the IP from the Serial Monitor
+- Run `brain.py` to start the bridge server
+
+> **Note:** Requires Flask, flask-cors, and pyautogui. Install via `pip install flask flask-cors pyautogui`
+
+### 3. Web Interface
+- Update the `BRIDGE_IP` variable inside `index.html` to match the local IP of the machine running `brain.py`
+- Open `index.html` in a browser on the same Wi-Fi network
+  
 ## 🔌 Hardware Components
 
 - ESP32
@@ -73,10 +89,13 @@ Keyboard → Python (UDP) → WiFi → ESP32 → DAC → Op-Amp → LEDs
 
 
 ## 💻 Software Components
+### 🔹 Web Interface
+- Browser-based controller for real-time input
+- Connects to the Python bridge over local network
 
-### 🔹 Python Controller
-- Reads keyboard input using pythons keyboard library
-- Sends real-time UDP packets
+### 🔹 Python Command Bridge
+- Receives HTTP requests from the Web UI
+- Forwards commands as low-latency UDP packets to the ESP32
 
 ### 🔹 ESP32 Firmware
 - Receives UDP data
@@ -88,7 +107,7 @@ Keyboard → Python (UDP) → WiFi → ESP32 → DAC → Op-Amp → LEDs
 YOUTUBE: https://www.youtube.com/watch?v=t6M_l-YdFlc
 
 
-## 🧠 Key Concepts
+## Key Concepts
 
 - Wireless embedded systems
 - UDP communication
