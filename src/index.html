@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GVS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+    <style>
+        body { 
+            background: #020617; 
+            color: white; 
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; 
+            margin: 0; 
+            overflow: hidden; 
+            touch-action: none; 
+            user-select: none; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .telemetry { text-align: center; margin-bottom: 2rem; }
+        .label { color: #3b82f6; font-size: 0.8rem; letter-spacing: 0.2rem; text-transform: uppercase; }
+        .value { font-size: 5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+        #joy-area { width: 100vw; height: 50vh; position: relative; }
+    </style>
+</head>
+<body>
+
+    <div class="telemetry">
+        <div class="label">Steering Vector</div>
+        <div class="value" id="x-display">0</div>
+    </div>
+
+    <div id="joy-area"></div>
+
+    <script>
+        /**
+         * NETWORK CONFIGURATION
+         * Ensure BRIDGE_IP matches the local IP of the machine running brain.py
+         */
+        const BRIDGE_IP = "192.168.X.X"; 
+        const display = document.getElementById('x-display');
+
+        // Initialize Virtual Joystick
+        const joystick = nipplejs.create({
+            zone: document.getElementById('joy-area'),
+            mode: 'static',
+            position: { left: '50%', top: '50%' },
+            color: '#3b82f6',
+            size: 200
+        });
+
+        // Event listener for joystick displacement
+        joystick.on('move', (evt, data) => {
+            // Normalize vector to -127 to 127 for 8-bit DAC centering
+            let val = Math.round(data.vector.x * 127);
+            display.innerText = val;
+            
+            transmitData(val);
+        });
+
+        // Reset to neutral on release
+        joystick.on('end', () => {
+            display.innerText = "0";
+            transmitData(0);
+        });
+
+        /**
+         * Asynchronous Data Transmission
+         * Transmits normalized X-vector to the Flask-UDP bridge
+         */
+        async function transmitData(xValue) {
+            try {
+                await fetch(`http://${BRIDGE_IP}:5000/move`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ x: xValue })
+                });
+            } catch (err) {
+                console.debug("Bridge connectivity error.");
+            }
+        }
+    </script>
+</body>
+</html>
